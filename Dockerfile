@@ -1,11 +1,13 @@
-# Use the official MongoDB image
-FROM mongo:latest
+FROM python:3.9
 
-# Set the MongoDB data directory
-VOLUME /data/db
+# Set working directory
+WORKDIR /app
 
-# Expose MongoDB port
-EXPOSE 27017
+# Install dependencies
+RUN pip install pymongo
 
-# Command to run MongoDB
-CMD ["mongod"]
+# Copy initialization script
+COPY scripts/init_db.py /app/init_db.py
+
+# Run the database initialization script
+CMD ["python", "/app/init_db.py"]
