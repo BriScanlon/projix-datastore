@@ -5,6 +5,8 @@ WORKDIR /app
 
 # Install dependencies
 RUN pip install pymongo
+RUN pip install pydantic
+RUN pip install pydantic[email]
 
 # Copy initialization script
 COPY scripts/init_db.py /app/init_db.py
