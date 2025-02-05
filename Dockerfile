@@ -7,6 +7,7 @@ WORKDIR /app
 RUN pip install pymongo
 RUN pip install pydantic
 RUN pip install pydantic[email]
+RUN pip install bcrypt
 
 # Copy initialization script
 COPY scripts/init_db.py /app/init_db.py
