@@ -23,8 +23,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     )
 
 
-# Helper for MongoDB ObjectId conversion
-class PyObjectId(str):
+class PyObjectId(ObjectId):
+    """Custom Pydantic Type for MongoDB ObjectId"""
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
@@ -33,13 +34,17 @@ class PyObjectId(str):
     def validate(cls, v):
         if not ObjectId.is_valid(v):
             raise ValueError("Invalid ObjectId")
-        return str(v)
+        return ObjectId(v)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, schema):
+        schema.update(type="string")
 
 
-# ✅ Pydantic v2-compatible User schema
 class User(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={  # ✅ Updated to Pydantic v2
+        arbitrary_types_allowed=True,  # ✅ Allow non-standard types like ObjectId
+        json_schema_extra={
             "example": {
                 "email": "user@example.com",
                 "hashed_password": "$2b$12$...",
@@ -50,12 +55,12 @@ class User(BaseModel):
                 "updated_at": "2023-12-01T12:00:00Z",
                 "tenant_id": "abc123",
             }
-        }
+        },
     )
 
-    id: Optional[PyObjectId] = Field(
-        default_factory=lambda: str(ObjectId()), alias="_id"
-    )  # ✅ Renamed from `_id`
+    id: Optional[ObjectId] = Field(
+        default_factory=ObjectId, alias="_id"
+    )  # ✅ Still stores as ObjectId
     email: EmailStr = Field(..., description="User's email address, used for login")
     hashed_password: str = Field(..., description="Hashed password for security")
     is_active: bool = Field(default=True, description="Whether the user is active")
@@ -131,6 +136,7 @@ def check_and_initialise_db():
             is_verified=True,
             roles=["sysadmin"],
         ).model_dump(by_alias=True)
+        admin_data["_id"] = ObjectId()
 
         users_collection.insert_one(admin_data)
         print("Admin user created successfully in users collection.")
